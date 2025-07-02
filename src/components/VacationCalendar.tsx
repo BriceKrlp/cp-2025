@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { VacationPeriod, VacationType } from '@/types/vacation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +9,7 @@ import { CalendarIcon, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { DateRange } from 'react-day-picker';
 
 interface VacationCalendarProps {
   vacations: VacationPeriod[];
@@ -24,7 +24,7 @@ const VacationCalendar: React.FC<VacationCalendarProps> = ({
   onAddVacation,
   onRemoveVacation,
 }) => {
-  const [selectedDates, setSelectedDates] = useState<{ from?: Date; to?: Date }>({});
+  const [selectedDates, setSelectedDates] = useState<DateRange | undefined>();
   const [isSelectingRange, setIsSelectingRange] = useState(false);
 
   const getVacationTypeColor = (type: VacationType) => {
@@ -45,9 +45,9 @@ const VacationCalendar: React.FC<VacationCalendarProps> = ({
     }
   };
 
-  const handleDateSelect = (range: { from?: Date; to?: Date } | undefined) => {
+  const handleDateSelect = (range: DateRange | undefined) => {
     if (!range) {
-      setSelectedDates({});
+      setSelectedDates(undefined);
       return;
     }
     
@@ -63,7 +63,7 @@ const VacationCalendar: React.FC<VacationCalendarProps> = ({
       };
       
       onAddVacation(newVacation);
-      setSelectedDates({});
+      setSelectedDates(undefined);
       setIsSelectingRange(false);
     }
   };
