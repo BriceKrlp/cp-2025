@@ -1,13 +1,13 @@
 
 import React from 'react';
-import { VacationBalance, VacationType } from '@/types/vacation';
+import { VacationBalance, VacationType, VacationQuota } from '@/types/vacation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Calendar, Clock, DollarSign } from 'lucide-react';
+import { Calendar, Clock, DollarSign, History } from 'lucide-react';
 
 interface VacationSummaryProps {
   balance: VacationBalance;
-  totalQuota: { vacation: number; rtt: number; unpaid: number };
+  totalQuota: VacationQuota;
 }
 
 const VacationSummary: React.FC<VacationSummaryProps> = ({
@@ -32,6 +32,14 @@ const VacationSummary: React.FC<VacationSummaryProps> = ({
       progressColor: 'bg-green-500',
     },
     {
+      type: 'previousYear' as VacationType,
+      label: 'CP N-1',
+      icon: History,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+      progressColor: 'bg-purple-500',
+    },
+    {
       type: 'unpaid' as VacationType,
       label: 'Congés sans solde',
       icon: DollarSign,
@@ -44,7 +52,7 @@ const VacationSummary: React.FC<VacationSummaryProps> = ({
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-gray-800">Récapitulatif des congés</h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {summaryItems.map((item) => {
           const Icon = item.icon;
           const typeBalance = balance[item.type];
@@ -68,10 +76,12 @@ const VacationSummary: React.FC<VacationSummaryProps> = ({
                     / {quota} jours
                   </span>
                 </div>
-                <Progress 
-                  value={usagePercentage} 
-                  className="h-2"
-                />
+                {quota > 0 && (
+                  <Progress 
+                    value={usagePercentage} 
+                    className="h-2"
+                  />
+                )}
                 <div className="text-xs text-gray-600">
                   {typeBalance.remaining} jours restants
                 </div>

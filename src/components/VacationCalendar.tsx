@@ -31,6 +31,7 @@ const VacationCalendar: React.FC<VacationCalendarProps> = ({
     switch (type) {
       case 'vacation': return 'bg-blue-500 text-white';
       case 'rtt': return 'bg-green-500 text-white';
+      case 'previousYear': return 'bg-purple-500 text-white';
       case 'unpaid': return 'bg-orange-500 text-white';
       default: return 'bg-gray-500 text-white';
     }
@@ -40,6 +41,7 @@ const VacationCalendar: React.FC<VacationCalendarProps> = ({
     switch (type) {
       case 'vacation': return 'CP';
       case 'rtt': return 'RTT';
+      case 'previousYear': return 'CP N-1';
       case 'unpaid': return 'CS';
       default: return '';
     }

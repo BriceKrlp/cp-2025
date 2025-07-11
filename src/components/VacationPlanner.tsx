@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { VacationPeriod, VacationType, VacationBalance } from '@/types/vacation';
+import { VacationPeriod, VacationType, VacationBalance, VacationQuota } from '@/types/vacation';
 import VacationTypeSelector from './VacationTypeSelector';
 import VacationCalendar from './VacationCalendar';
 import VacationSummary from './VacationSummary';
+import QuotaSettings from './QuotaSettings';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 
@@ -11,28 +12,29 @@ const VacationPlanner: React.FC = () => {
   const [selectedType, setSelectedType] = useState<VacationType>('vacation');
   const [vacations, setVacations] = useState<VacationPeriod[]>([]);
   
-  // Quotas initiaux basés sur votre demande : 8 semaines de congés dont 3 RTT
-  // En France : 5 semaines de congés payés + 3 semaines de RTT = 8 semaines
-  const totalQuota = {
+  // Quotas initiaux configurables
+  const [totalQuota, setTotalQuota] = useState<VacationQuota>({
     vacation: 25, // 5 semaines = 25 jours ouvrés
     rtt: 15,      // 3 semaines = 15 jours ouvrés  
+    previousYear: 5, // CP N-1 par défaut
     unpaid: 0,    // Pas de limite pour les congés sans solde
-  };
+  });
 
   const [balance, setBalance] = useState<VacationBalance>({
     vacation: { used: 0, remaining: totalQuota.vacation },
     rtt: { used: 0, remaining: totalQuota.rtt },
+    previousYear: { used: 0, remaining: totalQuota.previousYear },
     unpaid: { used: 0, remaining: 0 },
   });
 
-  // Recalculer le solde quand les vacances changent
+  // Recalculer le solde quand les vacances ou quotas changent
   useEffect(() => {
     const usedByType = vacations.reduce(
       (acc, vacation) => {
         acc[vacation.type] += vacation.workingDays;
         return acc;
       },
-      { vacation: 0, rtt: 0, unpaid: 0 }
+      { vacation: 0, rtt: 0, previousYear: 0, unpaid: 0 }
     );
 
     setBalance({
@@ -44,12 +46,16 @@ const VacationPlanner: React.FC = () => {
         used: usedByType.rtt,
         remaining: Math.max(0, totalQuota.rtt - usedByType.rtt),
       },
+      previousYear: {
+        used: usedByType.previousYear,
+        remaining: Math.max(0, totalQuota.previousYear - usedByType.previousYear),
+      },
       unpaid: {
         used: usedByType.unpaid,
         remaining: 0, // Pas de limite
       },
     });
-  }, [vacations]);
+  }, [vacations, totalQuota]);
 
   const handleAddVacation = (newVacation: Omit<VacationPeriod, 'id'>) => {
     // Vérifier si on a assez de jours disponibles
@@ -57,7 +63,13 @@ const VacationPlanner: React.FC = () => {
     const quota = totalQuota[newVacation.type];
     
     if (newVacation.type !== 'unpaid' && currentUsed + newVacation.workingDays > quota) {
-      alert(`Pas assez de jours ${newVacation.type === 'vacation' ? 'de congés payés' : 'de RTT'} disponibles !`);
+      const typeLabels = {
+        vacation: 'de congés payés',
+        rtt: 'de RTT',
+        previousYear: 'de CP N-1',
+        unpaid: 'sans solde'
+      };
+      alert(`Pas assez de jours ${typeLabels[newVacation.type]} disponibles !`);
       return;
     }
 
@@ -73,6 +85,8 @@ const VacationPlanner: React.FC = () => {
     setVacations(prev => prev.filter(v => v.id !== id));
   };
 
+  const totalAvailableDays = totalQuota.vacation + totalQuota.rtt + totalQuota.previousYear;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-6">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -82,14 +96,20 @@ const VacationPlanner: React.FC = () => {
             Planning de Congés 2025
           </h1>
           <p className="text-gray-600 text-lg">
-            Planifiez vos 8 semaines de congés (5 semaines de CP + 3 semaines de RTT)
+            Planifiez vos congés avec vos quotas personnalisés
           </p>
         </div>
+
+        {/* Configuration des quotas */}
+        <QuotaSettings 
+          quota={totalQuota}
+          onQuotaChange={setTotalQuota}
+        />
 
         {/* Résumé des quotas */}
         <Card className="shadow-xl border-0 bg-gradient-to-r from-blue-600 to-green-600 text-white">
           <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 text-center">
               <div>
                 <div className="text-3xl font-bold">{totalQuota.vacation}</div>
                 <div className="text-blue-100">Jours de congés payés</div>
@@ -99,7 +119,11 @@ const VacationPlanner: React.FC = () => {
                 <div className="text-green-100">Jours de RTT</div>
               </div>
               <div>
-                <div className="text-3xl font-bold">{totalQuota.vacation + totalQuota.rtt}</div>
+                <div className="text-3xl font-bold">{totalQuota.previousYear}</div>
+                <div className="text-purple-100">Jours de CP N-1</div>
+              </div>
+              <div>
+                <div className="text-3xl font-bold">{totalAvailableDays}</div>
                 <div className="text-white opacity-90">Total jours disponibles</div>
               </div>
             </div>
