@@ -24,9 +24,20 @@ const QuotaSettings: React.FC<QuotaSettingsProps> = ({
   };
 
   const parseNumber = (value: string): number => {
+    // Remplacer les virgules par des points pour le parsing
     const normalizedValue = value.replace(',', '.');
     const parsed = parseFloat(normalizedValue);
     return isNaN(parsed) ? 0 : parsed;
+  };
+
+  const handleInputChange = (field: keyof VacationQuota, value: string) => {
+    // Permettre seulement les chiffres, virgules et points
+    const sanitizedValue = value.replace(/[^0-9,\.]/g, '');
+    
+    setTempQuota(prev => ({
+      ...prev,
+      [field]: parseNumber(sanitizedValue)
+    }));
   };
 
   const handleSave = () => {
@@ -86,14 +97,8 @@ const QuotaSettings: React.FC<QuotaSettingsProps> = ({
             <Input
               id="vacation-quota"
               type="text"
-              step="0.5"
-              min="0"
-              max="50"
               value={formatNumber(tempQuota.vacation)}
-              onChange={(e) => setTempQuota(prev => ({
-                ...prev,
-                vacation: parseNumber(e.target.value)
-              }))}
+              onChange={(e) => handleInputChange('vacation', e.target.value)}
               placeholder="ex: 25 ou 25,5"
             />
             <div className="text-xs text-gray-500">Vous pouvez saisir des demi-journées (ex: 25,5)</div>
@@ -103,14 +108,8 @@ const QuotaSettings: React.FC<QuotaSettingsProps> = ({
             <Input
               id="rtt-quota"
               type="text"
-              step="0.5"
-              min="0"
-              max="30"
               value={formatNumber(tempQuota.rtt)}
-              onChange={(e) => setTempQuota(prev => ({
-                ...prev,
-                rtt: parseNumber(e.target.value)
-              }))}
+              onChange={(e) => handleInputChange('rtt', e.target.value)}
               placeholder="ex: 15 ou 15,5"
             />
             <div className="text-xs text-gray-500">Vous pouvez saisir des demi-journées (ex: 15,5)</div>
@@ -120,14 +119,8 @@ const QuotaSettings: React.FC<QuotaSettingsProps> = ({
             <Input
               id="previous-year-quota"
               type="text"
-              step="0.5"
-              min="0"
-              max="25"
               value={formatNumber(tempQuota.previousYear)}
-              onChange={(e) => setTempQuota(prev => ({
-                ...prev,
-                previousYear: parseNumber(e.target.value)
-              }))}
+              onChange={(e) => handleInputChange('previousYear', e.target.value)}
               placeholder="ex: 5 ou 5,5"
             />
             <div className="text-xs text-gray-500">Vous pouvez saisir des demi-journées (ex: 5,5)</div>
