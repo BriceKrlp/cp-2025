@@ -49,6 +49,10 @@ const VacationSummary: React.FC<VacationSummaryProps> = ({
     },
   ];
 
+  const formatNumber = (num: number): string => {
+    return num % 1 === 0 ? num.toString() : num.toString().replace('.', ',');
+  };
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-gray-800">Récapitulatif des congés</h3>
@@ -70,10 +74,10 @@ const VacationSummary: React.FC<VacationSummaryProps> = ({
               <CardContent className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-2xl font-bold text-gray-800">
-                    {typeBalance.used}
+                    {formatNumber(typeBalance.used)}
                   </span>
                   <span className="text-sm text-gray-600">
-                    / {quota} jours
+                    / {formatNumber(quota)} jours
                   </span>
                 </div>
                 {quota > 0 && (
@@ -83,7 +87,7 @@ const VacationSummary: React.FC<VacationSummaryProps> = ({
                   />
                 )}
                 <div className="text-xs text-gray-600">
-                  {typeBalance.remaining} jours restants
+                  {formatNumber(typeBalance.remaining)} jours restants
                 </div>
               </CardContent>
             </Card>

@@ -4,11 +4,14 @@ export interface VacationPeriod {
   startDate: Date;
   endDate: Date;
   type: VacationType;
-  workingDays: number;
+  workingDays: number; // Peut maintenant être décimal (0.5, 1, 1.5, etc.)
+  periodType: PeriodType; // Nouveau champ pour le type de période
   description?: string;
 }
 
 export type VacationType = 'vacation' | 'rtt' | 'unpaid' | 'previousYear';
+
+export type PeriodType = 'full' | 'morning' | 'afternoon';
 
 export interface VacationQuota {
   vacation: number;

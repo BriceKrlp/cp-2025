@@ -1,15 +1,16 @@
+
 import React, { useState } from 'react';
-import { VacationPeriod, VacationType } from '@/types/vacation';
+import { VacationPeriod, VacationType, PeriodType } from '@/types/vacation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { formatDateRange, getWorkingDaysBetween, isSameDay } from '@/utils/dateUtils';
+import { formatDateRange, getWorkingDaysBetween, formatWorkingDays } from '@/utils/dateUtils';
 import { CalendarIcon, Trash2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { DateRange } from 'react-day-picker';
+import { fr } from 'date-fns/locale';
+import PeriodTypeSelector from './PeriodTypeSelector';
 
 interface VacationCalendarProps {
   vacations: VacationPeriod[];
@@ -25,6 +26,7 @@ const VacationCalendar: React.FC<VacationCalendarProps> = ({
   onRemoveVacation,
 }) => {
   const [selectedDates, setSelectedDates] = useState<DateRange | undefined>();
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('full');
   const [isSelectingRange, setIsSelectingRange] = useState(false);
 
   const getVacationTypeColor = (type: VacationType) => {
@@ -56,12 +58,13 @@ const VacationCalendar: React.FC<VacationCalendarProps> = ({
     setSelectedDates(range);
     
     if (range.from && range.to) {
-      const workingDays = getWorkingDaysBetween(range.from, range.to);
+      const workingDays = getWorkingDaysBetween(range.from, range.to, selectedPeriod);
       const newVacation: Omit<VacationPeriod, 'id'> = {
         startDate: range.from,
         endDate: range.to,
         type: selectedType,
         workingDays,
+        periodType: selectedPeriod,
       };
       
       onAddVacation(newVacation);
@@ -72,12 +75,6 @@ const VacationCalendar: React.FC<VacationCalendarProps> = ({
 
   const isDateInVacation = (date: Date) => {
     return vacations.some(vacation => 
-      date >= vacation.startDate && date <= vacation.endDate
-    );
-  };
-
-  const getVacationForDate = (date: Date) => {
-    return vacations.find(vacation => 
       date >= vacation.startDate && date <= vacation.endDate
     );
   };
@@ -97,25 +94,31 @@ const VacationCalendar: React.FC<VacationCalendarProps> = ({
               Ajouter une période
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="range"
-              selected={selectedDates}
-              onSelect={handleDateSelect}
-              numberOfMonths={2}
-              locale={fr}
-              className={cn("p-3 pointer-events-auto")}
-              modifiers={{
-                vacation: (date) => isDateInVacation(date),
-              }}
-              modifiersStyles={{
-                vacation: { 
-                  backgroundColor: 'rgba(59, 130, 246, 0.3)',
-                  color: 'white',
-                  fontWeight: 'bold'
-                },
-              }}
-            />
+          <PopoverContent className="w-auto p-4" align="start">
+            <div className="space-y-4">
+              <PeriodTypeSelector
+                selectedPeriod={selectedPeriod}
+                onPeriodChange={setSelectedPeriod}
+              />
+              <Calendar
+                mode="range"
+                selected={selectedDates}
+                onSelect={handleDateSelect}
+                numberOfMonths={2}
+                locale={fr}
+                className={cn("p-3 pointer-events-auto")}
+                modifiers={{
+                  vacation: (date) => isDateInVacation(date),
+                }}
+                modifiersStyles={{
+                  vacation: { 
+                    backgroundColor: 'rgba(59, 130, 246, 0.3)',
+                    color: 'white',
+                    fontWeight: 'bold'
+                  },
+                }}
+              />
+            </div>
           </PopoverContent>
         </Popover>
       </div>
@@ -173,10 +176,10 @@ const VacationCalendar: React.FC<VacationCalendarProps> = ({
                     </div>
                     <div>
                       <div className="font-medium text-gray-800">
-                        {formatDateRange(vacation.startDate, vacation.endDate)}
+                        {formatDateRange(vacation.startDate, vacation.endDate, vacation.periodType)}
                       </div>
                       <div className="text-sm text-gray-600">
-                        {vacation.workingDays} jour{vacation.workingDays > 1 ? 's' : ''} ouvré{vacation.workingDays > 1 ? 's' : ''}
+                        {formatWorkingDays(vacation.workingDays)} ouvré{vacation.workingDays > 1 ? 's' : ''}
                       </div>
                     </div>
                   </div>

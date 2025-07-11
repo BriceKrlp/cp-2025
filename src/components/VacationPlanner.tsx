@@ -85,6 +85,10 @@ const VacationPlanner: React.FC = () => {
     setVacations(prev => prev.filter(v => v.id !== id));
   };
 
+  const formatNumber = (num: number): string => {
+    return num % 1 === 0 ? num.toString() : num.toString().replace('.', ',');
+  };
+
   const totalAvailableDays = totalQuota.vacation + totalQuota.rtt + totalQuota.previousYear;
 
   return (
@@ -96,7 +100,7 @@ const VacationPlanner: React.FC = () => {
             Planning de Congés 2025
           </h1>
           <p className="text-gray-600 text-lg">
-            Planifiez vos congés avec vos quotas personnalisés
+            Planifiez vos congés avec vos quotas personnalisés (demi-journées incluses)
           </p>
         </div>
 
@@ -111,19 +115,19 @@ const VacationPlanner: React.FC = () => {
           <CardContent className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 text-center">
               <div>
-                <div className="text-3xl font-bold">{totalQuota.vacation}</div>
+                <div className="text-3xl font-bold">{formatNumber(totalQuota.vacation)}</div>
                 <div className="text-blue-100">Jours de congés payés</div>
               </div>
               <div>
-                <div className="text-3xl font-bold">{totalQuota.rtt}</div>
+                <div className="text-3xl font-bold">{formatNumber(totalQuota.rtt)}</div>
                 <div className="text-green-100">Jours de RTT</div>
               </div>
               <div>
-                <div className="text-3xl font-bold">{totalQuota.previousYear}</div>
+                <div className="text-3xl font-bold">{formatNumber(totalQuota.previousYear)}</div>
                 <div className="text-purple-100">Jours de CP N-1</div>
               </div>
               <div>
-                <div className="text-3xl font-bold">{totalAvailableDays}</div>
+                <div className="text-3xl font-bold">{formatNumber(totalAvailableDays)}</div>
                 <div className="text-white opacity-90">Total jours disponibles</div>
               </div>
             </div>
