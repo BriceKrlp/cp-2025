@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +17,12 @@ const QuotaSettings: React.FC<QuotaSettingsProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [tempQuota, setTempQuota] = useState(quota);
+  // État pour les valeurs textuelles des inputs
+  const [inputValues, setInputValues] = useState({
+    vacation: quota.vacation.toString().replace('.', ','),
+    rtt: quota.rtt.toString().replace('.', ','),
+    previousYear: quota.previousYear.toString().replace('.', ',')
+  });
 
   const formatNumber = (num: number): string => {
     return num % 1 === 0 ? num.toString() : num.toString().replace('.', ',');
@@ -31,9 +36,30 @@ const QuotaSettings: React.FC<QuotaSettingsProps> = ({
   };
 
   const handleInputChange = (field: keyof VacationQuota, value: string) => {
-    // Permettre seulement les chiffres, virgules et points
-    const sanitizedValue = value.replace(/[^0-9,\.]/g, '');
+    // Permettre seulement les chiffres, virgules et points (une seule virgule/point max)
+    let sanitizedValue = value.replace(/[^0-9,\.]/g, '');
     
+    // S'assurer qu'il n'y a qu'une seule virgule ou point
+    const commaCount = (sanitizedValue.match(/,/g) || []).length;
+    const dotCount = (sanitizedValue.match(/\./g) || []).length;
+    
+    if (commaCount > 1) {
+      const firstCommaIndex = sanitizedValue.indexOf(',');
+      sanitizedValue = sanitizedValue.slice(0, firstCommaIndex + 1) + sanitizedValue.slice(firstCommaIndex + 1).replace(/,/g, '');
+    }
+    
+    if (dotCount > 1) {
+      const firstDotIndex = sanitizedValue.indexOf('.');
+      sanitizedValue = sanitizedValue.slice(0, firstDotIndex + 1) + sanitizedValue.slice(firstDotIndex + 1).replace(/\./g, '');
+    }
+
+    // Mettre à jour la valeur d'affichage
+    setInputValues(prev => ({
+      ...prev,
+      [field]: sanitizedValue
+    }));
+    
+    // Mettre à jour la valeur numérique
     setTempQuota(prev => ({
       ...prev,
       [field]: parseNumber(sanitizedValue)
@@ -47,6 +73,11 @@ const QuotaSettings: React.FC<QuotaSettingsProps> = ({
 
   const handleCancel = () => {
     setTempQuota(quota);
+    setInputValues({
+      vacation: quota.vacation.toString().replace('.', ','),
+      rtt: quota.rtt.toString().replace('.', ','),
+      previousYear: quota.previousYear.toString().replace('.', ',')
+    });
     setIsEditing(false);
   };
 
@@ -97,7 +128,7 @@ const QuotaSettings: React.FC<QuotaSettingsProps> = ({
             <Input
               id="vacation-quota"
               type="text"
-              value={formatNumber(tempQuota.vacation)}
+              value={inputValues.vacation}
               onChange={(e) => handleInputChange('vacation', e.target.value)}
               placeholder="ex: 25 ou 25,5"
             />
@@ -108,7 +139,7 @@ const QuotaSettings: React.FC<QuotaSettingsProps> = ({
             <Input
               id="rtt-quota"
               type="text"
-              value={formatNumber(tempQuota.rtt)}
+              value={inputValues.rtt}
               onChange={(e) => handleInputChange('rtt', e.target.value)}
               placeholder="ex: 15 ou 15,5"
             />
@@ -119,7 +150,7 @@ const QuotaSettings: React.FC<QuotaSettingsProps> = ({
             <Input
               id="previous-year-quota"
               type="text"
-              value={formatNumber(tempQuota.previousYear)}
+              value={inputValues.previousYear}
               onChange={(e) => handleInputChange('previousYear', e.target.value)}
               placeholder="ex: 5 ou 5,5"
             />
