@@ -88,7 +88,7 @@ const PlanningHeader: React.FC<PlanningHeaderProps> = ({
         </Dialog>
       </div>
       <p className="text-gray-600 text-lg">
-        Planifiez vos congés avec sauvegarde automatique dans le cloud
+        Calendrier {year} - Planifiez vos congés avec sauvegarde automatique dans le cloud
       </p>
     </div>
   );
