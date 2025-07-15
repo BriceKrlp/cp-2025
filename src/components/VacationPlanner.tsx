@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { VacationType, VacationBalance } from '@/types/vacation';
+import { VacationType, VacationBalance, VacationPeriod } from '@/types/vacation';
 import VacationTypeSelector from './VacationTypeSelector';
 import VacationCalendar from './VacationCalendar';
 import VacationSummary from './VacationSummary';
