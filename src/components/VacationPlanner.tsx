@@ -12,12 +12,22 @@ const VacationPlanner: React.FC = () => {
   const [selectedType, setSelectedType] = useState<VacationType>('vacation');
   const [vacations, setVacations] = useState<VacationPeriod[]>([]);
   
-  // Quotas initiaux configurables
-  const [totalQuota, setTotalQuota] = useState<VacationQuota>({
-    vacation: 25, // 5 semaines = 25 jours ouvrés
-    rtt: 15,      // 3 semaines = 15 jours ouvrés  
-    previousYear: 5, // CP N-1 par défaut
-    unpaid: 0,    // Pas de limite pour les congés sans solde
+  // Quotas initiaux configurables avec chargement depuis localStorage
+  const [totalQuota, setTotalQuota] = useState<VacationQuota>(() => {
+    const savedQuota = localStorage.getItem('vacation-quotas');
+    if (savedQuota) {
+      try {
+        return JSON.parse(savedQuota);
+      } catch (error) {
+        console.error('Erreur lors du chargement des quotas:', error);
+      }
+    }
+    return {
+      vacation: 25, // 5 semaines = 25 jours ouvrés
+      rtt: 15,      // 3 semaines = 15 jours ouvrés  
+      previousYear: 5, // CP N-1 par défaut
+      unpaid: 0,    // Pas de limite pour les congés sans solde
+    };
   });
 
   const [balance, setBalance] = useState<VacationBalance>({
@@ -26,6 +36,35 @@ const VacationPlanner: React.FC = () => {
     previousYear: { used: 0, remaining: totalQuota.previousYear },
     unpaid: { used: 0, remaining: 0 },
   });
+
+  // Charger les vacances depuis localStorage au démarrage
+  useEffect(() => {
+    const savedVacations = localStorage.getItem('vacation-periods');
+    if (savedVacations) {
+      try {
+        const parsedVacations = JSON.parse(savedVacations);
+        // Convertir les dates string en objets Date
+        const vacationsWithDates = parsedVacations.map((vacation: any) => ({
+          ...vacation,
+          startDate: new Date(vacation.startDate),
+          endDate: new Date(vacation.endDate),
+        }));
+        setVacations(vacationsWithDates);
+      } catch (error) {
+        console.error('Erreur lors du chargement des vacances:', error);
+      }
+    }
+  }, []);
+
+  // Sauvegarder les quotas dans localStorage à chaque modification
+  useEffect(() => {
+    localStorage.setItem('vacation-quotas', JSON.stringify(totalQuota));
+  }, [totalQuota]);
+
+  // Sauvegarder les vacances dans localStorage à chaque modification
+  useEffect(() => {
+    localStorage.setItem('vacation-periods', JSON.stringify(vacations));
+  }, [vacations]);
 
   // Recalculer le solde quand les vacances ou quotas changent
   useEffect(() => {
