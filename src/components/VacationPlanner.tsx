@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { VacationType, VacationBalance, VacationPeriod } from '@/types/vacation';
 import VacationTypeSelector from './VacationTypeSelector';
@@ -6,6 +5,7 @@ import VacationCalendar from './VacationCalendar';
 import VacationSummary from './VacationSummary';
 import QuotaSettings from './QuotaSettings';
 import AuthModal from './AuthModal';
+import PlanningHeader from './PlanningHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -17,6 +17,8 @@ import { useVacationPeriods } from '@/hooks/useVacationPeriods';
 const VacationPlanner: React.FC = () => {
   const [selectedType, setSelectedType] = useState<VacationType>('vacation');
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [planningTitle, setPlanningTitle] = useState('Planning de Congés');
+  const [planningYear, setPlanningYear] = useState(new Date().getFullYear());
   const { user, loading: authLoading, signOut } = useAuth();
   const { quotas, loading: quotasLoading, saveQuotas } = useVacationQuotas(user?.id || null);
   const { periods, loading: periodsLoading, addPeriod, removePeriod } = useVacationPeriods(user?.id || null);
@@ -99,10 +101,13 @@ const VacationPlanner: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-6">
         <div className="max-w-4xl mx-auto space-y-8">
+          <PlanningHeader
+            title={planningTitle}
+            year={planningYear}
+            onTitleChange={setPlanningTitle}
+            onYearChange={setPlanningYear}
+          />
           <div className="text-center space-y-4">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-              Planning de Congés 2025
-            </h1>
             <p className="text-gray-600 text-lg">
               Connectez-vous pour planifier vos congés avec sauvegarde automatique
             </p>
@@ -121,15 +126,13 @@ const VacationPlanner: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-6">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header avec déconnexion */}
-        <div className="flex justify-between items-center">
-          <div className="text-center space-y-4">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-              Planning de Congés 2025
-            </h1>
-            <p className="text-gray-600 text-lg">
-              Planifiez vos congés avec sauvegarde automatique dans le cloud
-            </p>
-          </div>
+        <div className="flex justify-between items-start">
+          <PlanningHeader
+            title={planningTitle}
+            year={planningYear}
+            onTitleChange={setPlanningTitle}
+            onYearChange={setPlanningYear}
+          />
           <div className="flex items-center space-x-4">
             <span className="text-sm text-gray-600">{user.email}</span>
             <Button variant="outline" onClick={handleSignOut}>
