@@ -1,74 +1,36 @@
 
 import React, { useState, useEffect } from 'react';
-import { VacationPeriod, VacationType, VacationBalance, VacationQuota } from '@/types/vacation';
+import { VacationType, VacationBalance } from '@/types/vacation';
 import VacationTypeSelector from './VacationTypeSelector';
 import VacationCalendar from './VacationCalendar';
 import VacationSummary from './VacationSummary';
 import QuotaSettings from './QuotaSettings';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import AuthModal from './AuthModal';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { LogOut, User } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useVacationQuotas } from '@/hooks/useVacationQuotas';
+import { useVacationPeriods } from '@/hooks/useVacationPeriods';
 
 const VacationPlanner: React.FC = () => {
   const [selectedType, setSelectedType] = useState<VacationType>('vacation');
-  const [vacations, setVacations] = useState<VacationPeriod[]>([]);
-  
-  // Quotas initiaux configurables avec chargement depuis localStorage
-  const [totalQuota, setTotalQuota] = useState<VacationQuota>(() => {
-    const savedQuota = localStorage.getItem('vacation-quotas');
-    if (savedQuota) {
-      try {
-        return JSON.parse(savedQuota);
-      } catch (error) {
-        console.error('Erreur lors du chargement des quotas:', error);
-      }
-    }
-    return {
-      vacation: 25, // 5 semaines = 25 jours ouvrés
-      rtt: 15,      // 3 semaines = 15 jours ouvrés  
-      previousYear: 5, // CP N-1 par défaut
-      unpaid: 0,    // Pas de limite pour les congés sans solde
-    };
-  });
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const { user, loading: authLoading, signOut } = useAuth();
+  const { quotas, loading: quotasLoading, saveQuotas } = useVacationQuotas(user?.id || null);
+  const { periods, loading: periodsLoading, addPeriod, removePeriod } = useVacationPeriods(user?.id || null);
 
   const [balance, setBalance] = useState<VacationBalance>({
-    vacation: { used: 0, remaining: totalQuota.vacation },
-    rtt: { used: 0, remaining: totalQuota.rtt },
-    previousYear: { used: 0, remaining: totalQuota.previousYear },
+    vacation: { used: 0, remaining: quotas.vacation },
+    rtt: { used: 0, remaining: quotas.rtt },
+    previousYear: { used: 0, remaining: quotas.previousYear },
     unpaid: { used: 0, remaining: 0 },
   });
 
-  // Charger les vacances depuis localStorage au démarrage
-  useEffect(() => {
-    const savedVacations = localStorage.getItem('vacation-periods');
-    if (savedVacations) {
-      try {
-        const parsedVacations = JSON.parse(savedVacations);
-        // Convertir les dates string en objets Date
-        const vacationsWithDates = parsedVacations.map((vacation: any) => ({
-          ...vacation,
-          startDate: new Date(vacation.startDate),
-          endDate: new Date(vacation.endDate),
-        }));
-        setVacations(vacationsWithDates);
-      } catch (error) {
-        console.error('Erreur lors du chargement des vacances:', error);
-      }
-    }
-  }, []);
-
-  // Sauvegarder les quotas dans localStorage à chaque modification
-  useEffect(() => {
-    localStorage.setItem('vacation-quotas', JSON.stringify(totalQuota));
-  }, [totalQuota]);
-
-  // Sauvegarder les vacances dans localStorage à chaque modification
-  useEffect(() => {
-    localStorage.setItem('vacation-periods', JSON.stringify(vacations));
-  }, [vacations]);
-
   // Recalculer le solde quand les vacances ou quotas changent
   useEffect(() => {
-    const usedByType = vacations.reduce(
+    const usedByType = periods.reduce(
       (acc, vacation) => {
         acc[vacation.type] += vacation.workingDays;
         return acc;
@@ -79,27 +41,27 @@ const VacationPlanner: React.FC = () => {
     setBalance({
       vacation: {
         used: usedByType.vacation,
-        remaining: Math.max(0, totalQuota.vacation - usedByType.vacation),
+        remaining: Math.max(0, quotas.vacation - usedByType.vacation),
       },
       rtt: {
         used: usedByType.rtt,
-        remaining: Math.max(0, totalQuota.rtt - usedByType.rtt),
+        remaining: Math.max(0, quotas.rtt - usedByType.rtt),
       },
       previousYear: {
         used: usedByType.previousYear,
-        remaining: Math.max(0, totalQuota.previousYear - usedByType.previousYear),
+        remaining: Math.max(0, quotas.previousYear - usedByType.previousYear),
       },
       unpaid: {
         used: usedByType.unpaid,
-        remaining: 0, // Pas de limite
+        remaining: 0,
       },
     });
-  }, [vacations, totalQuota]);
+  }, [periods, quotas]);
 
-  const handleAddVacation = (newVacation: Omit<VacationPeriod, 'id'>) => {
+  const handleAddVacation = async (newVacation: Omit<VacationPeriod, 'id'>) => {
     // Vérifier si on a assez de jours disponibles
     const currentUsed = balance[newVacation.type].used;
-    const quota = totalQuota[newVacation.type];
+    const quota = quotas[newVacation.type];
     
     if (newVacation.type !== 'unpaid' && currentUsed + newVacation.workingDays > quota) {
       const typeLabels = {
@@ -112,41 +74,75 @@ const VacationPlanner: React.FC = () => {
       return;
     }
 
-    const vacation: VacationPeriod = {
-      ...newVacation,
-      id: Date.now().toString(),
-    };
-
-    setVacations(prev => [...prev, vacation]);
+    await addPeriod(newVacation);
   };
 
-  const handleRemoveVacation = (id: string) => {
-    setVacations(prev => prev.filter(v => v.id !== id));
+  const handleSignOut = async () => {
+    await signOut();
   };
 
   const formatNumber = (num: number): string => {
     return num % 1 === 0 ? num.toString() : num.toString().replace('.', ',');
   };
 
-  const totalAvailableDays = totalQuota.vacation + totalQuota.rtt + totalQuota.previousYear;
+  const totalAvailableDays = quotas.vacation + quotas.rtt + quotas.previousYear;
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center">
+        <div className="text-lg">Chargement...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-6">
+        <div className="max-w-4xl mx-auto space-y-8">
+          <div className="text-center space-y-4">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
+              Planning de Congés 2025
+            </h1>
+            <p className="text-gray-600 text-lg">
+              Connectez-vous pour planifier vos congés avec sauvegarde automatique
+            </p>
+            <Button onClick={() => setShowAuthModal(true)} size="lg">
+              <User className="mr-2 h-5 w-5" />
+              Se connecter / S'inscrire
+            </Button>
+          </div>
+        </div>
+        <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-6">
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-            Planning de Congés 2025
-          </h1>
-          <p className="text-gray-600 text-lg">
-            Planifiez vos congés avec vos quotas personnalisés (demi-journées incluses)
-          </p>
+        {/* Header avec déconnexion */}
+        <div className="flex justify-between items-center">
+          <div className="text-center space-y-4">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
+              Planning de Congés 2025
+            </h1>
+            <p className="text-gray-600 text-lg">
+              Planifiez vos congés avec sauvegarde automatique dans le cloud
+            </p>
+          </div>
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-gray-600">{user.email}</span>
+            <Button variant="outline" onClick={handleSignOut}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Déconnexion
+            </Button>
+          </div>
         </div>
 
         {/* Configuration des quotas */}
         <QuotaSettings 
-          quota={totalQuota}
-          onQuotaChange={setTotalQuota}
+          quota={quotas}
+          onQuotaChange={saveQuotas}
         />
 
         {/* Résumé des quotas */}
@@ -154,15 +150,15 @@ const VacationPlanner: React.FC = () => {
           <CardContent className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 text-center">
               <div>
-                <div className="text-3xl font-bold">{formatNumber(totalQuota.vacation)}</div>
+                <div className="text-3xl font-bold">{formatNumber(quotas.vacation)}</div>
                 <div className="text-blue-100">Jours de congés payés</div>
               </div>
               <div>
-                <div className="text-3xl font-bold">{formatNumber(totalQuota.rtt)}</div>
+                <div className="text-3xl font-bold">{formatNumber(quotas.rtt)}</div>
                 <div className="text-green-100">Jours de RTT</div>
               </div>
               <div>
-                <div className="text-3xl font-bold">{formatNumber(totalQuota.previousYear)}</div>
+                <div className="text-3xl font-bold">{formatNumber(quotas.previousYear)}</div>
                 <div className="text-purple-100">Jours de CP N-1</div>
               </div>
               <div>
@@ -186,16 +182,16 @@ const VacationPlanner: React.FC = () => {
         <Separator className="my-8" />
 
         {/* Récapitulatif */}
-        <VacationSummary balance={balance} totalQuota={totalQuota} />
+        <VacationSummary balance={balance} totalQuota={quotas} />
 
         <Separator className="my-8" />
 
         {/* Calendrier */}
         <VacationCalendar
-          vacations={vacations}
+          vacations={periods}
           selectedType={selectedType}
           onAddVacation={handleAddVacation}
-          onRemoveVacation={handleRemoveVacation}
+          onRemoveVacation={removePeriod}
         />
       </div>
     </div>

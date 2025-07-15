@@ -14,7 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      vacation_periods: {
+        Row: {
+          created_at: string
+          description: string | null
+          end_date: string
+          id: string
+          period_type: string
+          start_date: string
+          type: string
+          updated_at: string
+          user_id: string | null
+          working_days: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          end_date: string
+          id?: string
+          period_type: string
+          start_date: string
+          type: string
+          updated_at?: string
+          user_id?: string | null
+          working_days: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          end_date?: string
+          id?: string
+          period_type?: string
+          start_date?: string
+          type?: string
+          updated_at?: string
+          user_id?: string | null
+          working_days?: number
+        }
+        Relationships: []
+      }
+      vacation_quotas: {
+        Row: {
+          created_at: string
+          id: string
+          previous_year: number
+          rtt: number
+          unpaid: number
+          updated_at: string
+          user_id: string | null
+          vacation: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          previous_year?: number
+          rtt?: number
+          unpaid?: number
+          updated_at?: string
+          user_id?: string | null
+          vacation?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          previous_year?: number
+          rtt?: number
+          unpaid?: number
+          updated_at?: string
+          user_id?: string | null
+          vacation?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
